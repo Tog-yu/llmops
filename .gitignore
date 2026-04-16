@@ -1,0 +1,19 @@
+.env
+tmp/*
+storage/log
+storage/memory
+.idea/*
+venv/*
+.venv/
+test/storage/*
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Hugging Face Hub 本地模型缓存（体积大，运行时下载，勿提交）
+internal/core/embeddings/models--*/
+
+# FAISS 本地向量索引（运行时生成，勿提交）
+internal/core/vector_store/*.faiss
+internal/core/vector_store/*.pkl

@@ -1,0 +1,1 @@
+# Hugging Face Hub 缓存目录。模型文件由运行时下载，已列入 .gitignore（models--*/）。
