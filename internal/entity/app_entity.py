@@ -5,6 +5,7 @@
 @Author  : thezehui@gmail.com
 @File    : app_entity.py
 """
+import os
 from enum import Enum
 
 # 生成icon描述提示词模板
@@ -33,7 +34,7 @@ class AppConfigType(str, Enum):
 DEFAULT_APP_CONFIG = {
     "model_config": {
         "provider": "openai",
-        "model": "gpt-4o-mini",
+        "model": os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"),
         "parameters": {
             "temperature": 0.5,
             "top_p": 0.85,

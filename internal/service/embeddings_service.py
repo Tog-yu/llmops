@@ -5,11 +5,13 @@
 @Author  : thezehui@gmail.com
 @File    : embeddings_service.py
 """
+import os
 from dataclasses import dataclass
 
 import tiktoken
 from injector import inject
 from langchain.embeddings import CacheBackedEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.storage import RedisStore
 from langchain_core.embeddings import Embeddings
 from langchain_openai import OpenAIEmbeddings
@@ -27,14 +29,24 @@ class EmbeddingsService:
     def __init__(self, redis: Redis):
         """构造函数，初始化文本嵌入模型客户端、存储器、缓存客户端"""
         self._store = RedisStore(client=redis)
-        # self._embeddings = HuggingFaceEmbeddings(
-        #     model_name="Alibaba-NLP/gte-multilingual-base",
-        #     cache_folder=os.path.join(os.getcwd(), "internal", "core", "embeddings"),
-        #     model_kwargs={
-        #         "trust_remote_code": True,
-        #     }
-        # )
-        self._embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        cache_folder = os.path.join(os.getcwd(), "internal", "core", "embeddings")
+        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "local").lower()
+
+        if embedding_provider == "local":
+            self._embeddings = HuggingFaceEmbeddings(
+                model_name=os.getenv("LOCAL_EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base"),
+                cache_folder=cache_folder,
+                model_kwargs={
+                    "trust_remote_code": True,
+                },
+                encode_kwargs={
+                    "normalize_embeddings": True,
+                },
+            )
+        else:
+            self._embeddings = OpenAIEmbeddings(
+                model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+            )
         self._cache_backed_embeddings = CacheBackedEmbeddings.from_bytes_store(
             self._embeddings,
             self._store,

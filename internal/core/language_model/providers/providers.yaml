@@ -1,6 +1,6 @@
 - name: openai
   label: OpenAI
-  description: OpenAI提供的模型，例如GPT-4o-mini和GPT-4o。
+  description: OpenAI兼容提供者模型，例如 gpt-5.4-mini 和 gpt-5.4。
   icon: icon.svg
   background: "#E5E7EB"
   supported_model_types:

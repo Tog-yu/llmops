@@ -128,4 +128,8 @@ class LanguageModelService(BaseService):
     @classmethod
     def load_default_language_model(cls) -> BaseLanguageModel:
         """加载默认的大语言模型，在模型管理器中获取不到模型或者出错时使用默认模型进行兜底"""
-        return ChatOpenAI(model="gpt-4o-mini", temperature=1, max_tokens=8192)
+        return ChatOpenAI(
+            model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"),
+            temperature=1,
+            max_tokens=8192,
+        )

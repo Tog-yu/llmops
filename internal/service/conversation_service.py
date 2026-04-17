@@ -6,6 +6,7 @@
 @File    : conversation_service.py
 """
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -47,7 +48,7 @@ class ConversationService(BaseService):
         prompt = ChatPromptTemplate.from_template(SUMMARIZER_TEMPLATE)
 
         # 2.构建大语言模型实例，并且将大语言模型的温度调低，降低幻觉的概率
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
+        llm = ChatOpenAI(model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"), temperature=0.5)
 
         # 3.构建链应用
         summary_chain = prompt | llm | StrOutputParser()
@@ -70,7 +71,7 @@ class ConversationService(BaseService):
         ])
 
         # 2.构建大语言模型实例，并且将大语言模型的温度调低，降低幻觉的概率
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"), temperature=0)
         structured_llm = llm.with_structured_output(ConversationInfo)
 
         # 3.构建链应用
@@ -106,7 +107,7 @@ class ConversationService(BaseService):
         ])
 
         # 2.构建大语言模型实例，并且将大语言模型的温度调低，降低幻觉的概率
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"), temperature=0)
         structured_llm = llm.with_structured_output(SuggestedQuestions)
 
         # 3.构建链应用

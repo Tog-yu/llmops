@@ -6,6 +6,7 @@
 @File    : assistant_agent_service.py
 """
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from threading import Thread
@@ -65,7 +66,7 @@ class AssistantAgentService(BaseService):
 
         # 4.使用GPT模型作为辅助Agent的LLM大脑
         llm = Chat(
-            model="gpt-4o-mini",
+            model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"),
             temperature=0.8,
             features=[ModelFeature.TOOL_CALL, ModelFeature.AGENT_THOUGHT],
             metadata={},
