@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flask: app.http.app:app",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flask",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "FLASK_APP": "app.http.app:app",
+        "FLASK_ENV": "development"
+      },
+      "args": [
+        "run",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5000"
+      ],
+      "jinja": true,
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: app/http/app.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/app/http/app.py",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    }
+  ]
+}

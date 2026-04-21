@@ -33,11 +33,16 @@ class EmbeddingsService:
         embedding_provider = os.getenv("EMBEDDING_PROVIDER", "local").lower()
 
         if embedding_provider == "local":
+            # Force Hugging Face caches into the repo-local writable directory.
+            os.environ.setdefault("HF_HOME", cache_folder)
+            os.environ.setdefault("HUGGINGFACE_HUB_CACHE", cache_folder)
+            os.environ.setdefault("TRANSFORMERS_CACHE", cache_folder)
             self._embeddings = HuggingFaceEmbeddings(
                 model_name=os.getenv("LOCAL_EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base"),
                 cache_folder=cache_folder,
                 model_kwargs={
                     "trust_remote_code": True,
+                    "local_files_only": True,
                 },
                 encode_kwargs={
                     "normalize_embeddings": True,

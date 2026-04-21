@@ -33,4 +33,7 @@ DEFAULT_CONFIG = {
 
     # 辅助Agent智能体应用id
     "ASSISTANT_AGENT_ID": "6774fcef-b594-8008-b30c-a05b8190afe6",
+
+    # /ping接口默认使用的Ollama模型名称（provider中的模型名，而非底层ollama tag）
+    "OLLAMA_PING_MODEL_NAME": "qwen3.5-0.8b",
 }

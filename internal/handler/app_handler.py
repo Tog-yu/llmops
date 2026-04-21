@@ -8,7 +8,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from flask import request
+from flask import request, current_app
 from flask_login import login_required, current_user
 from injector import inject
 
@@ -235,7 +235,7 @@ class AppHandler:
     @login_required
     def ping(self):
         provider = self.language_model_manager.get_provider("ollama")
-        model_entity = provider.get_model_entity("qwen2.5-7b")
+        model_entity = provider.get_model_entity(current_app.config["OLLAMA_PING_MODEL_NAME"])
         model_class = provider.get_model_class(model_entity.model_type)
         llm = model_class(**{
             **model_entity.attributes,
@@ -244,6 +244,10 @@ class AppHandler:
         })
         return success_json({
             "content": llm.invoke("你好，你是").content,
+            "model": model_entity.model_name,
+            "model_name": model_entity.model_name,
+            "provider_model_name": model_entity.model_name,
+            "configured_model": current_app.config["OLLAMA_PING_MODEL_NAME"],
             "features": llm.features,
             "metadata": llm.metadata,
         })

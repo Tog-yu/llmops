@@ -54,3 +54,6 @@ class Config:
 
         # 辅助Agent应用id标识
         self.ASSISTANT_AGENT_ID = _get_env("ASSISTANT_AGENT_ID")
+
+        # /ping接口默认使用的Ollama模型名称
+        self.OLLAMA_PING_MODEL_NAME = _get_env("OLLAMA_PING_MODEL_NAME")
