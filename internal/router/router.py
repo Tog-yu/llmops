@@ -32,6 +32,7 @@ from internal.handler import (
     WebAppHandler,
     ConversationHandler,
 )
+from internal.service.cos_service import CosService
 
 
 @inject
@@ -459,6 +460,12 @@ class Router:
             view_func=self.conversation_handler.update_conversation_is_pinned,
         )
 
-        # 17.在应用上注册蓝图
+        # 17.本地文件访问路由
+        bp.add_url_rule(
+            "/local-storage/<path:filepath>",
+            view_func=lambda filepath: CosService.serve_local_file(filepath),
+        )
+
+        # 18.在应用上注册蓝图
         app.register_blueprint(bp)
         app.register_blueprint(openapi_bp)
