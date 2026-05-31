@@ -78,7 +78,8 @@ class CosService:
     @classmethod
     def get_file_url(cls, key: str) -> str:
         """根据key生成本地文件访问URL"""
-        return f"/local-storage/{key}"
+        from flask import request
+        return f"{request.scheme}://{request.host}/local-storage/{key}"
 
     @classmethod
     def serve_local_file(cls, filepath: str):
