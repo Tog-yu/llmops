@@ -26,6 +26,10 @@ class Middleware:
 
     def request_loader(self, request: Request) -> Optional[Account]:
         """登录管理器的请求加载器"""
+        # 0.跳过OPTIONS预检请求的认证，避免CORS preflight失败
+        if request.method == "OPTIONS":
+            return None
+
         # 1.单独为llmops路由蓝图创建请求加载器
         if request.blueprint == "llmops":
             # 2.校验获取access_token

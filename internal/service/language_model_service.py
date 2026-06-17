@@ -12,9 +12,8 @@ from typing import Any
 
 from flask import current_app
 from injector import inject
-from langchain_openai import ChatOpenAI
-
 from internal.core.language_model import LanguageModelManager
+from internal.core.language_model.providers.openai.chat import Chat as OpenAIChat
 from internal.core.language_model.entities.model_entity import BaseLanguageModel
 from internal.exception import NotFoundException
 from internal.lib.helper import convert_model_to_dict
@@ -128,7 +127,7 @@ class LanguageModelService(BaseService):
     @classmethod
     def load_default_language_model(cls) -> BaseLanguageModel:
         """加载默认的大语言模型，在模型管理器中获取不到模型或者出错时使用默认模型进行兜底"""
-        return ChatOpenAI(
+        return OpenAIChat(
             model=os.getenv("OPENAI_CHAT_MODEL", "gpt-5.4-mini"),
             temperature=1,
             max_tokens=8192,
