@@ -138,19 +138,21 @@ class ConversationService(BaseService):
             message_id: UUID,
             agent_thoughts: list[AgentThought],
     ):
-        """存储智能体推理步骤消息"""
+        """在子线程中异步执行，将Agent流式输出的推理步骤持久化到3张表(message_agent_thought, message, conversation)"""
+        # 1.通过传递的flask_app建立应用上下文，使子线程能正常使用db.session等Flask扩展
         with flask_app.app_context():
-            # 1.定义变量存储推理位置及总耗时
-            position = 0
-            latency = 0
-
-            # 2.在子线程中重新查询conversation以及message，确保对象会被子线程的会话管理到
+            # 2.在子线程中重新查询conversation和message(主线程的orm对象不能跨线程使用)
             conversation = self.get(Conversation, conversation_id)
             message = self.get(Message, message_id)
 
-            # 3.循环遍历所有的智能体推理过程执行存储操作
+            # 3.定义变量记录推理步骤位置和总耗时
+            position = 0
+            latency = 0
+
+            # 4.遍历所有推理步骤，依次写入数据库
             for agent_thought in agent_thoughts:
-                # 4.存储长期记忆召回、推理、消息、动作、知识库检索等步骤
+                # ====== 写入 message_agent_thought 表 ======
+                # 存储长期记忆召回、推理、消息、动作、知识库检索等Agent推理步骤明细
                 if agent_thought.event in [
                     QueueEvent.LONG_TERM_MEMORY_RECALL,
                     QueueEvent.AGENT_THOUGHT,
@@ -158,11 +160,9 @@ class ConversationService(BaseService):
                     QueueEvent.AGENT_ACTION,
                     QueueEvent.DATASET_RETRIEVAL,
                 ]:
-                    # 5.更新位置及总耗时
                     position += 1
                     latency += agent_thought.latency
 
-                    # 6.创建智能体消息推理步骤
                     self.create(
                         MessageAgentThought,
                         app_id=app_id,
@@ -176,56 +176,58 @@ class ConversationService(BaseService):
                         observation=agent_thought.observation,
                         tool=agent_thought.tool,
                         tool_input=agent_thought.tool_input,
-                        # 消息相关数据
+                        # 消息相关数据(Prompt)
                         message=agent_thought.message,
                         message_token_count=agent_thought.message_token_count,
                         message_unit_price=agent_thought.message_unit_price,
                         message_price_unit=agent_thought.message_price_unit,
-                        # 答案相关字段
+                        # 答案相关数据(LLM生成的回答)
                         answer=agent_thought.answer,
                         answer_token_count=agent_thought.answer_token_count,
                         answer_unit_price=agent_thought.answer_unit_price,
                         answer_price_unit=agent_thought.answer_price_unit,
-                        # Agent推理统计相关
+                        # Agent推理统计相关(token消耗与成本)
                         total_token_count=agent_thought.total_token_count,
                         total_price=agent_thought.total_price,
                         latency=agent_thought.latency,
                     )
 
-                # 7.检测事件是否为Agent_message
+                # ====== 写入 message 表 ======
+                # AGENT_MESSAGE是LLM最终的文本回答，需要更新message记录的answer和统计信息
                 if agent_thought.event == QueueEvent.AGENT_MESSAGE:
-                    # 8.更新消息信息
                     self.update(
                         message,
-                        # 消息相关字段
+                        # 消息相关字段(请求LLM的Prompt消息列表)
                         message=agent_thought.message,
                         message_token_count=agent_thought.message_token_count,
                         message_unit_price=agent_thought.message_unit_price,
                         message_price_unit=agent_thought.message_price_unit,
-                        # 答案相关字段
+                        # 答案相关字段(LLM生成的最终回答)
                         answer=agent_thought.answer,
                         answer_token_count=agent_thought.answer_token_count,
                         answer_unit_price=agent_thought.answer_unit_price,
                         answer_price_unit=agent_thought.answer_price_unit,
-                        # Agent推理统计相关
+                        # 统计信息
                         total_token_count=agent_thought.total_token_count,
                         total_price=agent_thought.total_price,
-                        latency=latency,
+                        latency=latency,  # 使用累计总耗时
                     )
 
-                    # 9.检测是否开启长期记忆
+                    # ====== 写入 conversation 表(长期记忆) ======
+                    # 如果开启了长期记忆，用LLM增量摘要更新conversation.summary
                     if app_config["long_term_memory"]["enable"]:
                         new_summary = self.summary(
-                            message.query,
-                            agent_thought.answer,
-                            conversation.summary
+                            message.query,      # 用户本轮问题
+                            agent_thought.answer,  # LLM本轮回答
+                            conversation.summary   # 旧摘要
                         )
                         self.update(
                             conversation,
                             summary=new_summary,
                         )
 
-                    # 10.处理生成新会话名称
+                    # ====== 写入 conversation 表(会话名称) ======
+                    # 如果是新创建的会话，根据第一轮query生成会话名称
                     if conversation.is_new:
                         new_conversation_name = self.generate_conversation_name(message.query)
                         self.update(
@@ -233,7 +235,8 @@ class ConversationService(BaseService):
                             name=new_conversation_name,
                         )
 
-                # 11.判断是否为停止或者错误，如果是则需要更新消息状态
+                # ====== 处理异常终止 ======
+                # 如果是超时/停止/错误事件，更新message状态并终止后续写入
                 if agent_thought.event in [QueueEvent.TIMEOUT, QueueEvent.STOP, QueueEvent.ERROR]:
                     self.update(
                         message,

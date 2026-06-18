@@ -561,7 +561,12 @@ class AppService(BaseService):
             ),
         )
 
+        # 11.存储Agent流式输出的所有推理步骤，key=推理事件id，value=Agent推理事件对象
         agent_thoughts = {}
+        # 12.流式调用Agent智能体，传入初始状态：
+        #   - messages: 当前用户提问消息列表
+        #   - history: 短期历史消息(已由token_buffer_memory处理成LangChain消息格式)
+        #   - long_term_memory: 长期记忆(从对话摘要中提取)
         for agent_thought in agent.stream({
             "messages": [HumanMessage(query)],
             "history": history,
