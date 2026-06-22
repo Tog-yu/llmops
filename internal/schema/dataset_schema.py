@@ -30,7 +30,7 @@ class CreateDatasetReq(FlaskForm):
     ])
     icon = StringField("icon", validators=[
         DataRequired("知识库图标不能为空"),
-        URL("知识库图标必须是图片URL地址"),
+        URL(require_tld=False, message="知识库图标必须是图片URL地址"),
     ])
     description = StringField("description", default="", validators=[
         Optional(),
@@ -75,7 +75,7 @@ class UpdateDatasetReq(FlaskForm):
     ])
     icon = StringField("icon", validators=[
         DataRequired("知识库图标不能为空"),
-        URL("知识库图标必须是图片URL地址"),
+        URL(require_tld=False, message="知识库图标必须是图片URL地址"),
     ])
     description = StringField("description", default="", validators=[
         Optional(),

@@ -192,7 +192,7 @@ class OpenAPIService(BaseService):
                         "message_id": str(message.id),
                         "task_id": str(agent_thought.task_id),
                     }
-                    yield f"event: {agent_thought.event}\ndata:{json.dumps(data)}\n\n"
+                    yield f"event: {agent_thought.event.value}\ndata:{json.dumps(data)}\n\n"
 
                 # 22.将消息以及推理过程添加到数据库
                 thread = Thread(

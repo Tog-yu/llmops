@@ -614,7 +614,7 @@ class AppService(BaseService):
                 "message_id": str(message.id),
                 "task_id": str(agent_thought.task_id),
             }
-            yield f"event: {agent_thought.event}\ndata:{json.dumps(data)}\n\n"
+            yield f"event: {agent_thought.event.value}\ndata:{json.dumps(data)}\n\n"
 
         # 22.将消息以及推理过程添加到数据库
         # todo:将数据库数据存储/更新的操作转换为同步，将summary和conversation_name生成放置到Thread执行
