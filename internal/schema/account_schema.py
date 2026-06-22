@@ -58,5 +58,5 @@ class UpdateAvatarReq(FlaskForm):
     """更新账号头像请求"""
     avatar = StringField("avatar", validators=[
         DataRequired("账号头像不能为空"),
-        URL("账号头像必须是URL图片地址"),
+        URL(require_tld=False, message="账号头像必须是URL图片地址"),
     ])

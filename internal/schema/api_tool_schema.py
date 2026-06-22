@@ -37,7 +37,7 @@ class CreateApiToolReq(FlaskForm):
     ])
     icon = StringField("icon", validators=[
         DataRequired(message="工具提供者的图标不能为空"),
-        URL(message="工具提供者的图标必须是URL链接"),
+        URL(require_tld=False, message="工具提供者的图标必须是URL链接"),
     ])
     openapi_schema = StringField("openapi_schema", validators=[
         DataRequired(message="openapi_schema字符串不能为空")
@@ -62,7 +62,7 @@ class UpdateApiToolProviderReq(FlaskForm):
     ])
     icon = StringField("icon", validators=[
         DataRequired(message="工具提供者的图标不能为空"),
-        URL(message="工具提供者的图标必须是URL链接"),
+        URL(require_tld=False, message="工具提供者的图标必须是URL链接"),
     ])
     openapi_schema = StringField("openapi_schema", validators=[
         DataRequired(message="openapi_schema字符串不能为空")

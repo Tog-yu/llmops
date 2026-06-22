@@ -30,7 +30,7 @@ class CreateWorkflowReq(FlaskForm):
     ])
     icon = StringField("icon", validators=[
         DataRequired("工作流图标不能为空"),
-        URL(message="工作流图标必须是图片URL地址"),
+        URL(require_tld=False, message="工作流图标必须是图片URL地址"),
     ])
     description = StringField("description", validators=[
         DataRequired("工作流描述不能为空"),
@@ -51,7 +51,7 @@ class UpdateWorkflowReq(FlaskForm):
     ])
     icon = StringField("icon", validators=[
         DataRequired("工作流图标不能为空"),
-        URL(message="工作流图标必须是图片URL地址"),
+        URL(require_tld=False, message="工作流图标必须是图片URL地址"),
     ])
     description = StringField("description", validators=[
         DataRequired("工作流描述不能为空"),
