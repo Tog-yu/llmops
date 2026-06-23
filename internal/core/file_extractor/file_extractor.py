@@ -16,7 +16,6 @@ from injector import inject
 from langchain_community.document_loaders import (
     UnstructuredExcelLoader,
     UnstructuredPDFLoader,
-    UnstructuredMarkdownLoader,
     UnstructuredHTMLLoader,
     UnstructuredCSVLoader,
     UnstructuredPowerPointLoader,
@@ -82,12 +81,12 @@ class FileExtractor:
         file_extension = Path(file_path).suffix.lower()
 
         # 2.根据不同的文件扩展名去加载不同的加载器
-        if file_extension in [".xlsx", ".xls"]:
+        if file_extension in [".md", ".markdown", ".txt"]:
+            loader = TextLoader(file_path, autodetect_encoding=True)
+        elif file_extension in [".xlsx", ".xls"]:
             loader = UnstructuredExcelLoader(file_path)
         elif file_extension == ".pdf":
             loader = UnstructuredPDFLoader(file_path)
-        elif file_extension in [".md", ".markdown"]:
-            loader = UnstructuredMarkdownLoader(file_path)
         elif file_extension in [".htm", ".html"]:
             loader = UnstructuredHTMLLoader(file_path)
         elif file_extension == ".csv":

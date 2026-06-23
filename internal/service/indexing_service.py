@@ -6,6 +6,7 @@
 @File    : indexing_service.py
 """
 import logging
+import os
 import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -331,9 +332,13 @@ class IndexingService(BaseService):
             lc_segment.metadata["segment_enabled"] = True
 
         # 2.调用向量数据库，每次存储10条数据，避免一次传递过多的数据
+        errors = []
+
         def thread_func(flask_app: Flask, chunks: list[LCDocument], ids: list[UUID]) -> None:
             """线程函数，执行向量数据库与postgres数据的存储"""
             with flask_app.app_context():
+                if errors:
+                    return
                 try:
                     self.vector_database_service.vector_store.add_documents(
                         chunks, ids=ids,
@@ -347,7 +352,9 @@ class IndexingService(BaseService):
                             "enabled": True,
                         })
                 except Exception as e:
-                    logging.exception(f"构建文档片段索引发生异常，错误信息： {str(e)}")
+                    error = str(e)
+                    errors.append(error)
+                    logging.exception(f"构建文档片段索引发生异常，错误信息： {error}")
                     with self.db.auto_commit():
                         self.db.session.query(Segment).filter(
                             Segment.node_id.in_(ids)
@@ -355,10 +362,12 @@ class IndexingService(BaseService):
                             "status": SegmentStatus.ERROR,
                             "completed_at": None,
                             "stopped_at": datetime.now(),
+                            "error": error,
                             "enabled": False,
                         })
 
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        max_workers = int(os.getenv("INDEXING_MAX_WORKERS", "1"))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = []
             for i in range(0, len(lc_segments), 10):
                 chunks = lc_segments[i:i + 10]
@@ -367,6 +376,16 @@ class IndexingService(BaseService):
 
             for future in futures:
                 future.result()
+
+        if errors:
+            self.update(
+                document,
+                status=DocumentStatus.ERROR,
+                error=errors[0],
+                stopped_at=datetime.now(),
+                enabled=False,
+            )
+            return
 
         # 6.更新文档的状态数据
         self.update(

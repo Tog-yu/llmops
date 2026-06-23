@@ -14,6 +14,7 @@ from langchain.embeddings import CacheBackedEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.storage import RedisStore
 from langchain_core.embeddings import Embeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from redis import Redis
 
@@ -31,6 +32,7 @@ class EmbeddingsService:
         self._store = RedisStore(client=redis)
         cache_folder = os.path.join(os.getcwd(), "internal", "core", "embeddings")
         embedding_provider = os.getenv("EMBEDDING_PROVIDER", "local").lower()
+        embedding_model = os.getenv("LOCAL_EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base")
 
         if embedding_provider == "local":
             # Force Hugging Face caches into the repo-local writable directory.
@@ -38,7 +40,7 @@ class EmbeddingsService:
             os.environ.setdefault("HUGGINGFACE_HUB_CACHE", cache_folder)
             os.environ.setdefault("TRANSFORMERS_CACHE", cache_folder)
             self._embeddings = HuggingFaceEmbeddings(
-                model_name=os.getenv("LOCAL_EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base"),
+                model_name=embedding_model,
                 cache_folder=cache_folder,
                 model_kwargs={
                     "trust_remote_code": True,
@@ -48,14 +50,21 @@ class EmbeddingsService:
                     "normalize_embeddings": True,
                 },
             )
+        elif embedding_provider == "ollama":
+            embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "bge-m3")
+            self._embeddings = OllamaEmbeddings(
+                model=embedding_model,
+                base_url=os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+            )
         else:
+            embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
             self._embeddings = OpenAIEmbeddings(
-                model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+                model=embedding_model,
             )
         self._cache_backed_embeddings = CacheBackedEmbeddings.from_bytes_store(
             self._embeddings,
             self._store,
-            namespace="embeddings",
+            namespace=f"embeddings:{embedding_provider}:{embedding_model}",
         )
 
     @classmethod
