@@ -15,7 +15,6 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.storage import RedisStore
 from langchain_core.embeddings import Embeddings
 from langchain_ollama import OllamaEmbeddings
-from langchain_openai import OpenAIEmbeddings
 from redis import Redis
 
 
@@ -31,10 +30,11 @@ class EmbeddingsService:
         """构造函数，初始化文本嵌入模型客户端、存储器、缓存客户端"""
         self._store = RedisStore(client=redis)
         cache_folder = os.path.join(os.getcwd(), "internal", "core", "embeddings")
-        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "local").lower()
+        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "ollama").lower()
         embedding_model = os.getenv("LOCAL_EMBEDDING_MODEL", "Alibaba-NLP/gte-multilingual-base")
 
-        if embedding_provider == "local":
+        if embedding_provider in {"local", "huggingface"}:
+            embedding_provider = "local"
             # Force Hugging Face caches into the repo-local writable directory.
             os.environ.setdefault("HF_HOME", cache_folder)
             os.environ.setdefault("HUGGINGFACE_HUB_CACHE", cache_folder)
@@ -50,16 +50,13 @@ class EmbeddingsService:
                     "normalize_embeddings": True,
                 },
             )
-        elif embedding_provider == "ollama":
+        else:
+            if embedding_provider != "ollama":
+                embedding_provider = "ollama"
             embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "bge-m3")
             self._embeddings = OllamaEmbeddings(
                 model=embedding_model,
                 base_url=os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-            )
-        else:
-            embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
-            self._embeddings = OpenAIEmbeddings(
-                model=embedding_model,
             )
         self._cache_backed_embeddings = CacheBackedEmbeddings.from_bytes_store(
             self._embeddings,
